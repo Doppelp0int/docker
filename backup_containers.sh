@@ -8,7 +8,7 @@ BACKUP_DIR=/var/lib/docker/backups
 SOURCEFOLDER=/var/lib/docker/volumes
 BACKUPTIME=$(date +%Y-%m-%d_%H-%M-%S)
 DESTINATION=$BACKUP_DIR/$BACKUPTIME.tar.gz
-LOGFILE=$BACKUP_DIR/backup_$BACKUPTIME.log
+LOGFILE=$BACKUP_DIR/backup.log
 
 # Funktion zum Schreiben in die Logdatei und Konsole
 log() {
