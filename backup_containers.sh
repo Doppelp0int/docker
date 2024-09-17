@@ -9,6 +9,8 @@ SOURCEFOLDER=/var/lib/docker/volumes
 BACKUPTIME=$(date +%Y-%m-%d_%H-%M-%S)
 DESTINATION=$BACKUP_DIR/$BACKUPTIME.tar.gz
 LOGFILE=$BACKUP_DIR/backup.log
+REMOTE_BACKUP_DIR=/home/USER/backups
+REMOTE_SERVER=USER@SERVERIP
 
 # Funktion zum Schreiben in die Logdatei und Konsole
 log() {
@@ -47,7 +49,7 @@ log "Alte Backups gelöscht."
 
 # Kopiere das Backup zu Strato Server
 log "Übertrage Backup zu Strato Server..."
-scp $DESTINATION USER@SERVERIP:/home/USER/backups
+scp $DESTINATION $REMOTE_SERVER:$REMOTE_BACKUP_DIR
 log "Backup auf Strato Server übertragen."
 
 # Überprüfe die Integrität des Backups mittels Hash
@@ -56,11 +58,16 @@ log "Überprüfe die Integrität des Backups..."
 LOCAL_HASH=$(sha256sum $DESTINATION | awk '{print $1}')
 
 # Berechne den Hash der entfernten Backup-Datei
-REMOTE_HASH=$(ssh USER@SERVERIP "sha256sum /home/USER/backups/$BACKUPTIME.tar.gz" | awk '{print $1}')
+REMOTE_HASH=$(ssh $REMOTE_SERVER "sha256sum $REMOTE_BACKUP_DIR/$BACKUPTIME.tar.gz" | awk '{print $1}')
 
 # Vergleiche die beiden Hashes
 if [ "$LOCAL_HASH" = "$REMOTE_HASH" ]; then
     log "Backup erfolgreich übertragen und verifiziert."
+
+    # Lösche Backups auf dem Strato Server, die älter als 14 Tage sind
+    log "Lösche Backups auf Strato Server, die älter als 14 Tage sind..."
+    ssh $REMOTE_SERVER "find $REMOTE_BACKUP_DIR -mtime +14 -type f -delete"
+    log "Alte Backups auf Strato Server gelöscht."
 else
     log "Fehler: Backup-Überprüfung fehlgeschlagen!"
 fi
